@@ -1,0 +1,72 @@
+apiVersion: cr.kanister.io/v1alpha1
+kind: Blueprint
+metadata:
+  name: etcd-backup-bp
+  namespace: kasten-io
+actions:
+  beforeBackup:
+    phases:    
+    - name: createBackupPVC
+      func: KubeOps
+      args:
+        operation: create
+        namespace: 'openshift-etcd'
+        spec: |-
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: etcd-backup-pvc
+            namespace: openshift-etcd
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+    - name: createEtcdBackup
+      func: KubeOps
+      args:
+        operation: create
+        namespace: 'openshift-etcd'
+        spec: |-
+          apiVersion: operator.openshift.io/v1alpha1
+          kind: EtcdBackup
+          metadata:
+            name: etcd-single-backup
+            namespace: openshift-etcd
+          spec:
+            pvcName: etcd-backup-pvc
+    - name: waitForBackup
+      func: WaitV2
+      args:
+        timeout: 5m
+        conditions:
+          anyOf:
+          - condition: '{{ $available := false }}{{ range $condition := $.status.conditions }}{{ if and (eq .message "Complete") (eq .status "True")  }}{{ $available = true }}{{ end }}{{ end }}{{ if $available }}true{{ else }}false{{ end }}'
+            objectReference:
+              apiVersion: "v1alpha1"
+              group: "operator.openshift.io"
+              name: "etcd-single-backup"
+              namespace: "openshift-etcd"
+              resource: "etcdbackups"
+  afterBackup:
+    phases:    
+    - name: removeEtcdBackup
+      func: KubeOps
+      args:
+        operation: delete
+        objectReference:
+          apiVersion: "v1alpha1"
+          group: "operator.openshift.io"
+          resource: "etcdbackups"
+          name: "etcd-single-backup"
+          namespace: 'openshift-etcd'
+    - name: removePVC 
+      func: KubeOps
+      args:
+        operation: delete
+        objectReference:
+          apiVersion: "v1"
+          resource: "PersistentVolumeClaims"
+          name: "etcd-backup-pvc"
+          namespace: 'openshift-etcd'
