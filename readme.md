@@ -2,32 +2,36 @@
 
 Leverage the [etcd backup operator](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#creating-automated-etcd-backups_backup-etcd) provided by openshift. 
 
-# CAUTION / DISCLAIMER PLEASE READ THIS CAREFULLY !!!! 
+# CAUTION, PLEASE READ THIS CAREFULLY !!!! 
 
-The blueprint is based of a feature that [is still in take preview](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#creating-automated-etcd-backups_backup-etcd) (even for ocp 4.18). If you decide to follow it you won't be able to upgrade you openshift cluster.
+The blueprint is based of a feature that [is still in tech preview](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#creating-automated-etcd-backups_backup-etcd) (even for ocp 4.18). If you decide to follow it you won't be able to upgrade you openshift cluster.
 
 Don't do this on production, wait for this feature become available and fully supported.
 
 # Backup workflow 
 
 In the Before hook policy 
-- we delete the etcd backup pvc if it exist the we recreate it
+- we create the etcd backup PVC
 - we create the etcd backup custom resource, which will store the etcd backup on the pvc
 
 During policy
 - we snapshot the pvc and retain the snapshot depending of your local policy rentention
 - we export the pvc and retain the portable snapshot depending of your local retention
 
+In the After hook policy 
+- we delete the etcd backup custom resource
+- we delete the etcd backup pvc
+
 
 # Restoring 
 
-You need to follow the official procedure provided by Redhat : [Restoring to a previous cluster state](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#dr-scenario-2-restoring-cluster-state_dr-restoring-cluster-state)
+Pickup a restore point and restore the etcd backup PVC. Attach a busybox pod to the PVC. Then 
+- use `oc cp ...` to copy the etcd backup to your local machine 
+- use `scp` to copy the etcd backup to control plane node
 
-We cannot automate this process because it require too many privileged access (especially to the controle plane machine outside of a regular kubernetes workflow), 
-but the procedure expect that you copy the etcd-backup on the controle plane node. 
+Then, you need to follow the official procedure provided by Redhat : [Restoring to a previous cluster state](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#dr-scenario-2-restoring-cluster-state_dr-restoring-cluster-state)
 
-A simple way to do it is to restore the pvc from the backup using kasten then attach a single busybox pod to this pvc and copy the etcd backup 
-on your local machine (using `oc cp ...`) then to the controle plane (using `scp` for instance)
+We cannot automate this process because it require too many privileged access (especially to the controle plane machine outside of a regular kubernetes workflow).
 
 # Install the etcd backup operator 
 
