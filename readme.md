@@ -4,7 +4,7 @@ Leverage the [etcd backup operator](https://docs.redhat.com/en/documentation/ope
 
 # CAUTION, PLEASE READ THIS CAREFULLY !!!! 
 
-The blueprint is based of a feature that [is still in tech preview](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#creating-automated-etcd-backups_backup-etcd) (even for ocp 4.18). If you decide to follow it you won't be able to upgrade you openshift cluster.
+The blueprint is based on a feature that [is still in tech preview](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#creating-automated-etcd-backups_backup-etcd) (even for ocp 4.18). If you decide to follow it you won't be able to upgrade your openshift cluster.
 
 Don't do this on production, wait for this feature become available and fully supported.
 
@@ -31,7 +31,7 @@ Pickup a restore point and restore the etcd backup PVC. Attach a busybox pod to 
 
 Then, you need to follow the official procedure provided by Redhat : [Restoring to a previous cluster state](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#dr-scenario-2-restoring-cluster-state_dr-restoring-cluster-state)
 
-We cannot automate this process because it require too many privileged access (especially to the controle plane machine outside of a regular kubernetes workflow).
+We cannot automate this process because it requires too many privileged access (especially to the controle plane machine outside of a regular kubernetes workflow).
 
 # Install the etcd backup operator 
 
@@ -50,14 +50,4 @@ oc create -f etcd-backup-bp.yaml
 Create a policy that backup openshift-etcd namespace with a before hook and an after hook that invoke the blueprint action beforeBackup and afterBackup.
 
 ![policy](./images/policy.png)
-
-# How it works 
-
-- the before hook will create the PVC, the EtcdBackup resource and wait for the EtcdBackup to complete. The etcd backup has been created on the PVC.
-- Kasten will protect the namespace with the PVC so now you have a restorepoint that contains the PVC that contains the etcd backup.
-- the after hook will clean up the EtcdBackuo resource and the PVC so that the next policy run can recreate them.
-
-Depending of your retention you'll be able to restore the PVC in the restore point of your choice and follow the [restore procedure](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#creating-automated-etcd-backups_backup-etcd) given by RedHat. 
-
-
 
