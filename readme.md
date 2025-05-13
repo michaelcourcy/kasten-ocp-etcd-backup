@@ -15,8 +15,8 @@ In the Before hook policy
 - we create the etcd backup custom resource, which will store the etcd backup on the pvc
 
 During policy
-- we snapshot the pvc and retain the snapshot depending of your local policy rentention
-- we export the pvc and retain the portable snapshot depending of your local retention
+- we snapshot the pvc and retain the snapshot depending of your local  rentention
+- we export the pvc and retain the portable snapshot depending of your remote retention
 
 In the After hook policy 
 - we delete the etcd backup custom resource
