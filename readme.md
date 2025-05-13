@@ -31,7 +31,7 @@ Pickup a restore point and restore the etcd backup PVC. Attach a busybox pod to 
 
 Then, you need to follow the official procedure provided by Redhat : [Restoring to a previous cluster state](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#dr-scenario-2-restoring-cluster-state_dr-restoring-cluster-state)
 
-We cannot automate this process because it requires too many privileged access (especially to the controle plane machine outside of a regular kubernetes workflow).
+We cannot automate this process because it requires too many privileged access (especially to the controle plane machine outside of a regular kubernetes workflow), we give a more detailed procedure [later in this guide](#copy-the-backup-on-a-local-machine).
 
 # Install the etcd backup operator 
 
