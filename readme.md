@@ -51,3 +51,73 @@ Create a policy that backup openshift-etcd namespace with a before hook and an a
 
 ![policy](./images/policy.png)
 
+# Copy the backup on a local machine
+
+Let's say you want to copy the etcd backup on a local machine for doing further operations like [Restoring to a previous cluster state](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#dr-scenario-2-restoring-cluster-state_dr-restoring-cluster-state)
+
+1. Restore the pvc in another namespace for instance openshift-etcd-restored by selecting only pvc 
+![openshift-etcd-restored](./images/openshift-etcd-restored.png)
+
+2. Make sure you only restore the pvc 
+![openshift-etcd-restored-only-pvc](./images/openshift-etcd-restored-only-pvc.png)
+
+3. Once the restore action completed attach a pod to the restored pvc 
+
+```
+oc apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd-backup-pvc
+  namespace: openshift-etcd-restored
+spec:
+  containers:
+  - name: busybox
+    image: busybox    
+    command:
+      - sleep
+      - "3600"
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: etcd-backup-pvc
+EOF
+```
+
+4. List the backup in the pvc 
+
+```
+oc exec -n openshift-etcd-restored etcd-backup-pvc -- ls /data
+```
+
+You should have an output like this one 
+```
+backup-etcd-single-backup-2025-05-13_080903
+lost+found
+```
+
+5. Copy the directory in your local machine 
+
+```
+oc cp openshift-etcd-restored/etcd-backup-pvc:/data/backup-etcd-single-backup-2025-05-13_080903 backup-etcd-single-backup-2025-05-13_080903
+```
+
+You should be able to list the content 
+```
+ls backup-etcd-single-backup-2025-05-13_080903 
+```
+
+The output should be something like 
+```
+snapshot_2025-05-13_080917__POSSIBLY_DIRTY__.db                 static_kuberesources_2025-05-13_080917__POSSIBLY_DIRTY__.tar.gz
+```
+
