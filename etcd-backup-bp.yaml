@@ -26,14 +26,12 @@ actions:
     - name: createEtcdBackup
       func: KubeOps
       args:
-        operation: create
-        namespace: 'openshift-etcd'
+        operation: create        
         spec: |-
           apiVersion: operator.openshift.io/v1alpha1
           kind: EtcdBackup
           metadata:
-            name: etcd-single-backup
-            namespace: openshift-etcd
+            name: etcd-single-backup            
           spec:
             pvcName: etcd-backup-pvc
     - name: waitForBackup
@@ -46,27 +44,41 @@ actions:
             objectReference:
               apiVersion: "v1alpha1"
               group: "operator.openshift.io"
-              name: "etcd-single-backup"
-              namespace: "openshift-etcd"
+              name: "etcd-single-backup"              
               resource: "etcdbackups"
   afterBackup:
     phases:    
+    # bug kubeops delete does not work on non-namespaced resources
+    # reported we use a single kubetask to delete the resource in the meantime
+    #- name: removeEtcdBackup
+    #  func: KubeOps
+    #  args:
+    #    operation: delete
+    #    objectReference:
+    #      apiVersion: "v1alpha1"
+    #      group: "operator.openshift.io"
+    #      resource: "etcdbackups"
+    #      name: "etcd-single-backup"          
     - name: removeEtcdBackup
-      func: KubeOps
+      func: KubeTask      
       args:
-        operation: delete
-        objectReference:
-          apiVersion: "v1alpha1"
-          group: "operator.openshift.io"
-          resource: "etcdbackups"
-          name: "etcd-single-backup"
-          namespace: 'openshift-etcd'
+        image: ghcr.io/kanisterio/kanister-kubectl-1.18:0.113.0
+        command:
+          - sh
+          - -o
+          - errexit
+          - -o
+          - pipefail
+          - -c
+          - |
+            kubectl delete etcdbackups.operator.openshift.io etcd-single-backup    
+            # kubectl delete pvc etcd-backup-pvc -n openshift-etcd        
     - name: removePVC 
       func: KubeOps
       args:
         operation: delete
         objectReference:
           apiVersion: "v1"
-          resource: "PersistentVolumeClaims"
+          resource: "persistentvolumeclaims"
           name: "etcd-backup-pvc"
           namespace: 'openshift-etcd'
