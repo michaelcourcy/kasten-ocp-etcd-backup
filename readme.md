@@ -55,7 +55,7 @@ Create a policy that backup openshift-etcd namespace with a before hook and an a
 
 Let's say you want to copy the etcd backup on a local machine for doing further operations like [Restoring to a previous cluster state](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/backup_and_restore/control-plane-backup-and-restore#dr-scenario-2-restoring-cluster-state_dr-restoring-cluster-state)
 
-1. Restore the pvc in another namespace for instance openshift-etcd-restored by selecting only pvc 
+1. Restore the pvc in another namespace for instance openshift-etcd-restored 
 ![openshift-etcd-restored](./images/openshift-etcd-restored.png)
 
 2. Make sure you only restore the pvc 
